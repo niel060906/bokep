@@ -1,0 +1,6 @@
+{
+  "name": "Music Stream",
+  "description": "Premium music streaming app with Apple Music aesthetics, featuring high-performance playback from Firestore.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
