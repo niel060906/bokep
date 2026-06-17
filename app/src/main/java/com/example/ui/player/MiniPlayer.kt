@@ -28,9 +28,12 @@ import com.example.domain.Song
 fun MiniPlayer(
     song: Song,
     isPlaying: Boolean,
+    currentPosition: Long,
+    duration: Long,
     onTogglePlay: () -> Unit,
     onClick: () -> Unit
 ) {
+    val progress = if (duration > 0) currentPosition.toFloat() / duration.toFloat() else 0f
     Box(
         modifier = Modifier
             .padding(horizontal = 8.dp, vertical = 4.dp)
@@ -62,7 +65,7 @@ fun MiniPlayer(
                     overflow = TextOverflow.Ellipsis
                 )
                 Text(
-                    text = "Now Playing • 0:42", // Mocking time for visual match
+                    text = "${song.artist} • ${formatTime(currentPosition)}",
                     style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp, letterSpacing = 0.5.sp),
                     color = Color.White.copy(alpha = 0.6f)
                 )
@@ -70,7 +73,7 @@ fun MiniPlayer(
                 // Mini Progress Bar
                 Spacer(modifier = Modifier.height(6.dp))
                 LinearProgressIndicator(
-                    progress = { 0.35f },
+                    progress = { progress },
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(2.dp)
@@ -100,4 +103,11 @@ fun MiniPlayer(
             }
         }
     }
+}
+
+private fun formatTime(ms: Long): String {
+    val totalSeconds = ms / 1000
+    val minutes = totalSeconds / 60
+    val seconds = totalSeconds % 60
+    return String.format("%d:%02d", minutes, seconds)
 }

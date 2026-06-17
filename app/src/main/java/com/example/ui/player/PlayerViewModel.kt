@@ -16,6 +16,7 @@ class PlayerViewModel(
     val isPlaying = musicController.isPlaying
     val playbackState = musicController.playbackState
     val currentPosition = musicController.currentPosition
+    val duration = musicController.duration
 
     private val _isFavorite = MutableStateFlow(false)
     val isFavorite = _isFavorite.asStateFlow()

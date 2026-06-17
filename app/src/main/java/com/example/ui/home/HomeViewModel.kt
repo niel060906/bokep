@@ -23,6 +23,8 @@ class HomeViewModel(
 
     val currentSong = musicController.currentSong
     val isPlaying = musicController.isPlaying
+    val currentPosition = musicController.currentPosition
+    val duration = musicController.duration
 
     fun onSongClick(song: Song) {
         musicController.playSong(song, songs.value)

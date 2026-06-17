@@ -62,6 +62,8 @@ fun MainContainer() {
 
     val currentSong by homeViewModel.currentSong.collectAsState()
     val isPlaying by homeViewModel.isPlaying.collectAsState()
+    val currentPosition by homeViewModel.currentPosition.collectAsState()
+    val duration by homeViewModel.duration.collectAsState()
     
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     var showPlayerSheet by remember { mutableStateOf(false) }
@@ -88,6 +90,8 @@ fun MainContainer() {
                     MiniPlayer(
                         song = song,
                         isPlaying = isPlaying,
+                        currentPosition = currentPosition,
+                        duration = duration,
                         onTogglePlay = { homeViewModel.togglePlayPause() },
                         onClick = { showPlayerSheet = true }
                     )

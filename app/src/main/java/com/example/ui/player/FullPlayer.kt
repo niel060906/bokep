@@ -29,10 +29,17 @@ fun FullPlayer(
     val song by viewModel.currentSong.collectAsState()
     val isPlaying by viewModel.isPlaying.collectAsState()
     val isFavorite by viewModel.isFavorite.collectAsState()
+    val currentPosition by viewModel.currentPosition.collectAsState()
+    val duration by viewModel.duration.collectAsState()
     
-    // We'll simulate position since Media3 Browser polling is a bit complex for a single file edit
-    // but in a production app we'd use a Flow from the service.
-    var sliderPosition by remember { mutableStateOf(0f) }
+    var sliderValue by remember { mutableStateOf(0f) }
+    var isDraggingSlider by remember { mutableStateOf(false) }
+
+    LaunchedEffect(currentPosition, duration) {
+        if (!isDraggingSlider && duration > 0) {
+            sliderValue = currentPosition.toFloat() / duration.toFloat()
+        }
+    }
 
     if (song == null) return
 
@@ -129,9 +136,15 @@ fun FullPlayer(
 
             // Slider
             Slider(
-                value = sliderPosition,
-                onValueChange = { sliderPosition = it },
-                onValueChangeFinished = { /* viewModel.seekTo((sliderPosition * song!!.duration).toLong()) */ },
+                value = sliderValue,
+                onValueChange = { 
+                    isDraggingSlider = true
+                    sliderValue = it 
+                },
+                onValueChangeFinished = { 
+                    isDraggingSlider = false
+                    viewModel.seekTo((sliderValue * duration).toLong())
+                },
                 colors = SliderDefaults.colors(
                     thumbColor = Color.White,
                     activeTrackColor = Color.White,
@@ -140,10 +153,8 @@ fun FullPlayer(
             )
 
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                val currentTime = "0:00" // Placeholder
-                val totalTime = "3:30" // Placeholder
-                Text(currentTime, style = MaterialTheme.typography.labelSmall)
-                Text(totalTime, style = MaterialTheme.typography.labelSmall)
+                Text(formatTime(currentPosition), style = MaterialTheme.typography.labelSmall)
+                Text(formatTime(duration), style = MaterialTheme.typography.labelSmall)
             }
 
             Spacer(modifier = Modifier.weight(0.3f))
@@ -190,4 +201,11 @@ fun FullPlayer(
             Spacer(modifier = Modifier.height(32.dp))
         }
     }
+}
+
+private fun formatTime(ms: Long): String {
+    val totalSeconds = ms / 1000
+    val minutes = totalSeconds / 60
+    val seconds = totalSeconds % 60
+    return String.format("%d:%02d", minutes, seconds)
 }

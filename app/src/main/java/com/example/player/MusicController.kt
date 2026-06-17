@@ -11,6 +11,7 @@ import com.example.domain.Song
 import com.example.player.service.PlaybackService
 import com.google.common.util.concurrent.ListenableFuture
 import com.google.common.util.concurrent.MoreExecutors
+import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
@@ -33,8 +34,28 @@ class MusicController(
     private val _currentPosition = MutableStateFlow(0L)
     val currentPosition = _currentPosition.asStateFlow()
 
+    private val _duration = MutableStateFlow(0L)
+    val duration = _duration.asStateFlow()
+
+    private val scope = CoroutineScope(Dispatchers.Main + SupervisorJob())
+
     init {
         initializeBrowser()
+        startPositionPolling()
+    }
+
+    private fun startPositionPolling() {
+        scope.launch {
+            while (true) {
+                browser?.let {
+                    if (it.isPlaying) {
+                        _currentPosition.value = it.currentPosition
+                        _duration.value = it.duration.coerceAtLeast(0L)
+                    }
+                }
+                delay(1000L)
+            }
+        }
     }
 
     private fun initializeBrowser() {
@@ -104,6 +125,7 @@ class MusicController(
     }
 
     fun destroy() {
+        scope.cancel()
         browserFuture?.let { MediaBrowser.releaseFuture(it) }
         browser?.removeListener(this)
         browser = null
