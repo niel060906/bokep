@@ -31,6 +31,7 @@ fun FullPlayer(
     val isFavorite by viewModel.isFavorite.collectAsState()
     val currentPosition by viewModel.currentPosition.collectAsState()
     val duration by viewModel.duration.collectAsState()
+    val playbackError by viewModel.playbackError.collectAsState()
     
     var sliderValue by remember { mutableStateOf(0f) }
     var isDraggingSlider by remember { mutableStateOf(false) }
@@ -110,6 +111,14 @@ fun FullPlayer(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Column(modifier = Modifier.weight(1f)) {
+                    if (playbackError != null) {
+                        Text(
+                            text = playbackError!!,
+                            color = MaterialTheme.colorScheme.error,
+                            style = MaterialTheme.typography.labelMedium,
+                            modifier = Modifier.padding(bottom = 4.dp)
+                        )
+                    }
                     Text(
                         text = currentSong.title,
                         style = MaterialTheme.typography.headlineSmall,

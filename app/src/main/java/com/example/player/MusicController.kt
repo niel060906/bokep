@@ -21,12 +21,16 @@ class MusicController(
 
     private var browserFuture: ListenableFuture<MediaBrowser>? = null
     private var browser: MediaBrowser? = null
+    private var songsList: List<Song> = emptyList()
 
     private val _currentSong = MutableStateFlow<Song?>(null)
     val currentSong = _currentSong.asStateFlow()
 
     private val _isPlaying = MutableStateFlow(false)
     val isPlaying = _isPlaying.asStateFlow()
+
+    private val _error = MutableStateFlow<String?>(null)
+    val error = _error.asStateFlow()
 
     private val _playbackState = MutableStateFlow(Player.STATE_IDLE)
     val playbackState = _playbackState.asStateFlow()
@@ -68,17 +72,23 @@ class MusicController(
     }
 
     fun playSong(song: Song, allSongs: List<Song>) {
-        val browser = browser ?: return
+        this.songsList = allSongs
+        val browser = browser
+        if (browser == null) {
+            // Queue if browser not ready (optional, but let's at least avoid return early without info)
+            return
+        }
         
         val mediaItems = allSongs.map { s ->
             MediaItem.Builder()
                 .setMediaId(s.video_id)
                 .setUri(s.catbox_mp3)
+                .setMimeType("audio/mpeg")
                 .setMediaMetadata(
                     MediaMetadata.Builder()
                         .setTitle(s.title)
                         .setArtist(s.artist)
-                        .setArtworkUri(android.net.Uri.parse(s.catbox_thumb))
+                        .setArtworkUri(if (s.catbox_thumb.isNotEmpty()) android.net.Uri.parse(s.catbox_thumb) else null)
                         .build()
                 )
                 .build()
@@ -89,7 +99,6 @@ class MusicController(
         browser.setMediaItems(mediaItems, startIndex, 0L)
         browser.prepare()
         browser.play()
-        _currentSong.value = song
     }
 
     fun togglePlayPause() {
@@ -107,6 +116,12 @@ class MusicController(
 
     override fun onIsPlayingChanged(isPlaying: Boolean) {
         _isPlaying.value = isPlaying
+        if (isPlaying) _error.value = null
+    }
+
+    override fun onPlayerError(error: androidx.media3.common.PlaybackException) {
+        _error.value = "Playback Error: ${error.errorCodeName}"
+        _isPlaying.value = false
     }
 
     override fun onPlaybackStateChanged(playbackState: Int) {
@@ -115,12 +130,17 @@ class MusicController(
 
     override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
         mediaItem?.let { item ->
-            _currentSong.value = Song(
-                video_id = item.mediaId,
-                title = item.mediaMetadata.title?.toString() ?: "",
-                artist = item.mediaMetadata.artist?.toString() ?: "",
-                catbox_thumb = item.mediaMetadata.artworkUri?.toString() ?: ""
-            )
+            val song = songsList.find { it.video_id == item.mediaId }
+            if (song != null) {
+                _currentSong.value = song
+            } else {
+                _currentSong.value = Song(
+                    video_id = item.mediaId,
+                    title = item.mediaMetadata.title?.toString() ?: "",
+                    artist = item.mediaMetadata.artist?.toString() ?: "",
+                    catbox_thumb = item.mediaMetadata.artworkUri?.toString() ?: ""
+                )
+            }
         }
     }
 
